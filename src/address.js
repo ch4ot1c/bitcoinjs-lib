@@ -12,10 +12,17 @@ function fromBase58Check (address) {
 
   // TODO: 4.0.0, move to "toOutputScript"
   if (payload.length < 21) throw new TypeError(address + ' is too short')
-  if (payload.length > 21) throw new TypeError(address + ' is too long')
+  if (payload.length > 22) throw new TypeError(address + ' is too long')
 
-  var version = payload.readUInt8(0)
-  var hash = payload.slice(1)
+  var version, hash
+  var doubleBytes = payload.readUInt16(0)
+  if (doubleBytes === networks.bitcoinPrivate || doubleBytes === networks.bitcoinPrivateTestnet) {
+    version = doubleBytes
+    hash = payload.slice(2)
+  } else { // Normal (BTC)
+    version = payload.readUInt8(0)
+    hash = payload.slice(1)
+  }
 
   return { version: version, hash: hash }
 }
@@ -34,9 +41,10 @@ function fromBech32 (address) {
 function toBase58Check (hash, version) {
   typeforce(types.tuple(types.Hash160bit, types.UInt8), arguments)
 
-  var payload = Buffer.allocUnsafe(21)
+  var isDoubleVersion = version.length === 2
+  var payload = Buffer.allocUnsafe(isDoubleVersion ? 21 : 22)
   payload.writeUInt8(version, 0)
-  hash.copy(payload, 1)
+  hash.copy(payload, version.length)
 
   return bs58check.encode(payload)
 }
