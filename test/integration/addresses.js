@@ -7,6 +7,7 @@ var dhttp = require('dhttp/200')
 
 // deterministic RNG for testing only
 function rng () { return Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz') }
+function rng2 () { return Buffer.from('yzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzy') }
 
 describe('bitcoinjs-lib (addresses)', function () {
   it('can generate a random address', function () {
@@ -137,5 +138,35 @@ describe('bitcoinjs-lib (addresses)', function () {
 
     assert.strictEqual(address, 'LZJSxZbjqJ2XVEquqfqHg1RQTDdfST5PTn')
     assert.strictEqual(wif, 'T7A4PUSgTDHecBxW1ZiYFrDNRih2o7M8Gf9xpoCgudPF9gDiNvuS')
+  })
+
+  it('can generate a Bitcoin Private testnet address', function () {
+    var bitcoinPrivateTestnet = bitcoin.networks.bitcoinPrivateTestnet
+    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivateTestnet, rng: rng })
+    var wif = keyPair.toWIF()
+    var address = keyPair.getAddress()
+
+    assert.strictEqual(address, 'n1UbLzksqZukBR9biS4YS5M245KbXBFYhG7')
+    assert.strictEqual(wif, 'cRgnQe9MUu1JznntrLaoQpB476M8PURvXVQB5R2eqms5tXnzNsrr')
+  })
+
+  it('can generate a Bitcoin Private address', function () {
+    var bitcoinPrivate = bitcoin.networks.bitcoinPrivate
+    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivate, rng: rng })
+    var wif = keyPair.toWIF()
+    var address = keyPair.getAddress()
+
+    assert.strictEqual(address, 'b1JYhNY8uVnpaMiUKcgGxzVLKsGyTcFXduC')
+    assert.strictEqual(wif, 'L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
+  })
+
+  it('can generate a second Bitcoin Private address', function () {
+    var bitcoinPrivate = bitcoin.networks.bitcoinPrivate
+    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivate, rng: rng2 })
+    var wif = keyPair.toWIF()
+    var address = keyPair.getAddress()
+
+    assert.strictEqual(address, 'b1SnupacHs4SJ2uvyLA66TAfsYtcibPZCNa')
+    assert.strictEqual(wif, 'L1HrCYv41ytNcDW3m2C43YMPhww71NdPafcdrkRTSfZ5EoAEN8TX')
   })
 })

@@ -14,6 +14,8 @@ describe('address', function () {
       it('decodes ' + f.base58check, function () {
         var decode = baddress.fromBase58Check(f.base58check)
 
+        console.log(decode.version)
+        console.log(f.version)
         assert.strictEqual(decode.version, f.version)
         assert.strictEqual(decode.hash.toString('hex'), f.hash)
       })
