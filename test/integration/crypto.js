@@ -3,7 +3,9 @@
 var assert = require('assert')
 var bigi = require('bigi')
 var bitcoin = require('../../')
+var bip32 = require('bip32')
 var crypto = require('crypto')
+var tinysecp = require('tiny-secp256k1')
 
 var ecurve = require('ecurve')
 var secp256k1 = ecurve.getCurveByName('secp256k1')
@@ -21,8 +23,8 @@ describe('bitcoinjs-lib (crypto)', function () {
 
       assert(bitcoin.script.pubKeyHash.input.check(scriptChunks), 'Expected pubKeyHash script')
       var prevOutScript = bitcoin.address.toOutputScript('1ArJ9vRaQcoQ29mTWZH768AmRwzb6Zif1z')
-      var scriptSignature = bitcoin.ECSignature.parseScriptSignature(scriptChunks[0])
-      var publicKey = bitcoin.ECPair.fromPublicKeyBuffer(scriptChunks[1])
+      var scriptSignature = bitcoin.script.signature.decode(scriptChunks[0])
+      var publicKey = bitcoin.ECPair.fromPublicKey(scriptChunks[1])
 
       var m = tx.hashForSignature(vin, prevOutScript, scriptSignature.hashType)
       assert(publicKey.verify(m, scriptSignature.signature), 'Invalid m')
@@ -41,12 +43,14 @@ describe('bitcoinjs-lib (crypto)', function () {
         var inputB = tx.ins[j]
 
         // enforce matching r values
-        assert.strictEqual(inputA.signature.r.toString(), inputB.signature.r.toString())
-        var r = inputA.signature.r
-        var rInv = r.modInverse(n)
+        let r = inputA.signature.slice(0, 32)
+        let rB = inputB.signature.slice(0, 32)
+        assert.strictEqual(r.toString('hex'), rB.toString('hex'))
 
-        var s1 = inputA.signature.s
-        var s2 = inputB.signature.s
+        var rInv = bigi.fromBuffer(r).modInverse(n)
+
+        var s1 = bigi.fromBuffer(inputA.signature.slice(32, 64))
+        var s2 = bigi.fromBuffer(inputB.signature.slice(32, 64))
         var z1 = inputA.z
         var z2 = inputB.z
 
@@ -68,35 +72,31 @@ describe('bitcoinjs-lib (crypto)', function () {
 
   it('can recover a BIP32 parent private key from the parent public key, and a derived, non-hardened child private key', function () {
     function recoverParent (master, child) {
-      assert(!master.keyPair.d, 'You already have the parent private key')
-      assert(child.keyPair.d, 'Missing child private key')
+      assert(master.isNeutered(), 'You already have the parent private key')
+      assert(!child.isNeutered(), 'Missing child private key')
 
-      var curve = secp256k1
-      var QP = master.keyPair.Q
-      var serQP = master.keyPair.getPublicKeyBuffer()
-
-      var d1 = child.keyPair.d
+      var serQP = master.publicKey
+      var d1 = child.privateKey
       var d2
       var data = Buffer.alloc(37)
       serQP.copy(data, 0)
 
       // search index space until we find it
-      for (var i = 0; i < bitcoin.HDNode.HIGHEST_BIT; ++i) {
+      for (var i = 0; i < 0x80000000; ++i) {
         data.writeUInt32BE(i, 33)
 
         // calculate I
         var I = crypto.createHmac('sha512', master.chainCode).update(data).digest()
         var IL = I.slice(0, 32)
-        var pIL = bigi.fromBuffer(IL)
 
-        // See hdnode.js:273 to understand
-        d2 = d1.subtract(pIL).mod(curve.n)
+        // See bip32.js:273 to understand
+        d2 = tinysecp.privateSub(d1, IL)
 
-        var Qp = new bitcoin.ECPair(d2).Q
-        if (Qp.equals(QP)) break
+        var Qp = bip32.fromPrivateKey(d2, Buffer.alloc(32, 0)).publicKey
+        if (Qp.equals(serQP)) break
       }
 
-      var node = new bitcoin.HDNode(new bitcoin.ECPair(d2), master.chainCode, master.network)
+      var node = bip32.fromPrivateKey(d2, master.chainCode, master.network)
       node.depth = master.depth
       node.index = master.index
       node.masterFingerprint = master.masterFingerprint
@@ -104,7 +104,7 @@ describe('bitcoinjs-lib (crypto)', function () {
     }
 
     var seed = crypto.randomBytes(32)
-    var master = bitcoin.HDNode.fromSeedBuffer(seed)
+    var master = bip32.fromSeed(seed)
     var child = master.derive(6) // m/6
 
     // now for the recovery

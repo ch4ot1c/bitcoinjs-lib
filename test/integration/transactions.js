@@ -1,9 +1,17 @@
 /* global describe, it */
 
-var assert = require('assert')
-var bitcoin = require('../../')
-var regtestUtils = require('./_regtest')
-var regtest = regtestUtils.network
+let assert = require('assert')
+let bitcoin = require('../../')
+let regtestUtils = require('./_regtest')
+let regtest = regtestUtils.network
+
+// TODO: remove
+let baddress = bitcoin.address
+let bcrypto = bitcoin.crypto
+function getAddress (node, network) {
+  network = network || bitcoin.networks.bitcoin
+  return baddress.toBase58Check(bcrypto.hash160(node.publicKey), network.pubKeyHash)
+}
 
 function rng () {
   return Buffer.from('YT8dAtK4d16A3P1z+TpwB2jJ4aFH3g9M1EioIBkLEV4=', 'base64')
@@ -14,6 +22,7 @@ describe('bitcoinjs-lib (transactions)', function () {
     var alice = bitcoin.ECPair.fromWIF('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy')
     var txb = new bitcoin.TransactionBuilder()
 
+    txb.setVersion(1)
     txb.addInput('61d520ccb74288c96bc1a2b20ea1c0d5a704776dd0164a396efec3ea7040349d', 0) // Alice's previous transaction output, has 15000 satoshis
     txb.addOutput('1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP', 12000)
     // (in)15000 - (out)12000 = (fee)3000, this is the miner fee
@@ -29,6 +38,7 @@ describe('bitcoinjs-lib (transactions)', function () {
     var bob = bitcoin.ECPair.fromWIF('KwcN2pT3wnRAurhy7qMczzbkpY5nXMW2ubh696UBc1bcwctTx26z')
 
     var txb = new bitcoin.TransactionBuilder()
+    txb.setVersion(1)
     txb.addInput('b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c', 6) // Alice's previous transaction output, has 200000 satoshis
     txb.addInput('7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730', 0) // Bob's previous transaction output, has 300000 satoshis
     txb.addOutput('1CUNEBjYrCn2y1SdiUMohaKUi4wpP326Lb', 180000)
@@ -50,17 +60,17 @@ describe('bitcoinjs-lib (transactions)', function () {
     var aliceChange = bitcoin.ECPair.makeRandom({ network: regtest, rng: rng })
 
     // give Alice 2 unspent outputs
-    regtestUtils.faucet(alice1.getAddress(), 5e4, function (err, unspent0) {
+    regtestUtils.faucet(getAddress(alice1, regtest), 5e4, function (err, unspent0) {
       if (err) return done(err)
 
-      regtestUtils.faucet(alice2.getAddress(), 7e4, function (err, unspent1) {
+      regtestUtils.faucet(getAddress(alice2, regtest), 7e4, function (err, unspent1) {
         if (err) return done(err)
 
         var txb = new bitcoin.TransactionBuilder(regtest)
         txb.addInput(unspent0.txId, unspent0.vout) // alice1 unspent
         txb.addInput(unspent1.txId, unspent1.vout) // alice2 unspent
         txb.addOutput('mwCwTceJvYV27KXBc3NJZys6CjsgsoeHmf', 8e4) // the actual "spend"
-        txb.addOutput(aliceChange.getAddress(), 1e4) // Alice's change
+        txb.addOutput(getAddress(aliceChange, regtest), 1e4) // Alice's change
         // (in)(4e4 + 2e4) - (out)(1e4 + 3e4) = (fee)2e4 = 20000, this is the miner fee
 
         // Alice signs each input with the respective private keys
@@ -79,12 +89,12 @@ describe('bitcoinjs-lib (transactions)', function () {
 
     var keyPair = bitcoin.ECPair.makeRandom({ network: regtest })
 
-    regtestUtils.faucet(keyPair.getAddress(), 2e5, function (err, unspent) {
+    regtestUtils.faucet(getAddress(keyPair, regtest), 2e5, function (err, unspent) {
       if (err) return done(err)
 
       var txb = new bitcoin.TransactionBuilder(regtest)
       var data = Buffer.from('bitcoinjs-lib', 'utf8')
-      var dataScript = bitcoin.script.nullData.output.encode(data)
+      var dataScript = bitcoin.script.nullData.output.encode([data])
 
       txb.addInput(unspent.txId, unspent.vout)
       txb.addOutput(dataScript, 1000)
@@ -105,7 +115,7 @@ describe('bitcoinjs-lib (transactions)', function () {
       '91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbgx3cTMqe',
       '91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbgx9rcrL7'
     ].map(function (wif) { return bitcoin.ECPair.fromWIF(wif, regtest) })
-    var pubKeys = keyPairs.map(function (x) { return x.getPublicKeyBuffer() })
+    var pubKeys = keyPairs.map(function (x) { return x.publicKey })
 
     var redeemScript = bitcoin.script.multisig.output.encode(2, pubKeys)
     var scriptPubKey = bitcoin.script.scriptHash.output.encode(bitcoin.crypto.hash160(redeemScript))
@@ -140,8 +150,7 @@ describe('bitcoinjs-lib (transactions)', function () {
     this.timeout(30000)
 
     var keyPair = bitcoin.ECPair.fromWIF('cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN87JcbXMTcA', regtest)
-    var pubKey = keyPair.getPublicKeyBuffer()
-    var pubKeyHash = bitcoin.crypto.hash160(pubKey)
+    var pubKeyHash = bitcoin.crypto.hash160(keyPair.publicKey)
 
     var redeemScript = bitcoin.script.witnessPubKeyHash.output.encode(pubKeyHash)
     var redeemScriptHash = bitcoin.crypto.hash160(redeemScript)
@@ -181,7 +190,7 @@ describe('bitcoinjs-lib (transactions)', function () {
       'cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN87KcLPVfXz',
       'cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN87L7FgDCKE'
     ].map(function (wif) { return bitcoin.ECPair.fromWIF(wif, regtest) })
-    var pubKeys = keyPairs.map(function (x) { return x.getPublicKeyBuffer() })
+    var pubKeys = keyPairs.map(function (x) { return x.publicKey })
 
     var witnessScript = bitcoin.script.multisig.output.encode(3, pubKeys)
     var redeemScript = bitcoin.script.witnessScriptHash.output.encode(bitcoin.crypto.sha256(witnessScript))
@@ -220,18 +229,18 @@ describe('bitcoinjs-lib (transactions)', function () {
       '032b4c06c06c3ec0b7fa29519dfa5aae193ee2cc35ca127f29f14ec605d62fb63d',
       '0216c92abe433106491bdeb4a261226f20f5a4ac86220cc6e37655aac6bf3c1f2a',
       '039e05da8b8ea4f9868ecebb25998c7701542986233f4401799551fbecf316b18f'
-    ].map(function (q) { return bitcoin.ECPair.fromPublicKeyBuffer(Buffer.from(q, 'hex')) })
+    ].map(function (q) { return bitcoin.ECPair.fromPublicKey(Buffer.from(q, 'hex')) })
 
     var tx = bitcoin.Transaction.fromHex(txHex)
 
     tx.ins.forEach(function (input, i) {
       var keyPair = keyPairs[i]
-      var prevOutScript = bitcoin.address.toOutputScript(keyPair.getAddress())
+      var prevOutScript = bitcoin.address.toOutputScript(getAddress(keyPair))
       var scriptSig = bitcoin.script.pubKeyHash.input.decode(input.script)
-      var ss = bitcoin.ECSignature.parseScriptSignature(scriptSig.signature)
+      var ss = bitcoin.script.signature.decode(scriptSig.signature)
       var hash = tx.hashForSignature(i, prevOutScript, ss.hashType)
 
-      assert.strictEqual(scriptSig.pubKey.toString('hex'), keyPair.getPublicKeyBuffer().toString('hex'))
+      assert.strictEqual(scriptSig.pubKey.toString('hex'), keyPair.publicKey.toString('hex'))
       assert.strictEqual(keyPair.verify(hash, ss.signature), true)
     })
   })

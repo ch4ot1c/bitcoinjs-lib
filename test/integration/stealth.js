@@ -1,67 +1,72 @@
 /* global describe, it */
 
-var assert = require('assert')
-var bigi = require('bigi')
-var bitcoin = require('../../')
+let assert = require('assert')
+let bitcoin = require('../../')
+let ecc = require('tiny-secp256k1')
 
-var ecurve = require('ecurve')
-var secp256k1 = ecurve.getCurveByName('secp256k1')
-var G = secp256k1.G
-var n = secp256k1.n
+// TODO: remove
+let baddress = bitcoin.address
+let bcrypto = bitcoin.crypto
+function getAddress (node) {
+  return baddress.toBase58Check(bcrypto.hash160(node.publicKey), bitcoin.networks.bitcoin.pubKeyHash)
+}
 
 // vG = (dG \+ sha256(e * dG)G)
 function stealthSend (e, Q) {
-  var eQ = Q.multiply(e) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var cG = G.multiply(c)
-  var vG = new bitcoin.ECPair(null, Q.add(cG))
+  var eQ = ecc.pointMultiply(Q, e, true) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var Qc = ecc.pointAddScalar(Q, c)
+  var vG = bitcoin.ECPair.fromPublicKey(Qc)
 
   return vG
 }
 
 // v = (d + sha256(eG * d))
 function stealthReceive (d, eG) {
-  var eQ = eG.multiply(d) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var v = new bitcoin.ECPair(d.add(c).mod(n))
+  var eQ = ecc.pointMultiply(eG, d) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var dc = ecc.privateAdd(d, c)
+  var v = bitcoin.ECPair.fromPrivateKey(dc)
 
   return v
 }
 
 // d = (v - sha256(e * dG))
 function stealthRecoverLeaked (v, e, Q) {
-  var eQ = Q.multiply(e) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var d = new bitcoin.ECPair(v.subtract(c).mod(n))
+  var eQ = ecc.pointMultiply(Q, e) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var vc = ecc.privateSub(v, c)
+  var d = bitcoin.ECPair.fromPrivateKey(vc)
 
   return d
 }
 
 // vG = (rG \+ sha256(e * dG)G)
 function stealthDualSend (e, R, Q) {
-  var eQ = Q.multiply(e) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var cG = G.multiply(c)
-  var vG = new bitcoin.ECPair(null, R.add(cG))
+  var eQ = ecc.pointMultiply(Q, e) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var Rc = ecc.pointAddScalar(R, c)
+  var vG = bitcoin.ECPair.fromPublicKey(Rc)
 
   return vG
 }
 
 // vG = (rG \+ sha256(eG * d)G)
 function stealthDualScan (d, R, eG) {
-  var eQ = eG.multiply(d) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var cG = G.multiply(c)
-  var vG = new bitcoin.ECPair(null, R.add(cG))
+  var eQ = ecc.pointMultiply(eG, d) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var Rc = ecc.pointAddScalar(R, c)
+  var vG = bitcoin.ECPair.fromPublicKey(Rc)
 
   return vG
 }
 
 // v = (r + sha256(eG * d))
 function stealthDualReceive (d, r, eG) {
-  var eQ = eG.multiply(d) // shared secret
-  var c = bigi.fromBuffer(bitcoin.crypto.sha256(eQ.getEncoded()))
-  var v = new bitcoin.ECPair(r.add(c).mod(n))
+  var eQ = ecc.pointMultiply(eG, d) // shared secret
+  var c = bitcoin.crypto.sha256(eQ)
+  var rc = ecc.privateAdd(r, c)
+  var v = bitcoin.ECPair.fromPrivateKey(rc)
 
   return v
 }
@@ -73,17 +78,17 @@ describe('bitcoinjs-lib (crypto)', function () {
     var nonce = bitcoin.ECPair.fromWIF('KxVqB96pxbw1pokzQrZkQbLfVBjjHFfp2mFfEp8wuEyGenLFJhM9') // private to sender
 
     // ... recipient reveals public key (recipient.Q) to sender
-    var forSender = stealthSend(nonce.d, recipient.Q)
-    assert.equal(forSender.getAddress(), '1CcZWwCpACJL3AxqoDbwEt4JgDFuTHUspE')
+    var forSender = stealthSend(nonce.privateKey, recipient.publicKey)
+    assert.equal(getAddress(forSender), '1CcZWwCpACJL3AxqoDbwEt4JgDFuTHUspE')
     assert.throws(function () { forSender.toWIF() }, /Error: Missing private key/)
 
     // ... sender reveals nonce public key (nonce.Q) to recipient
-    var forRecipient = stealthReceive(recipient.d, nonce.Q)
-    assert.equal(forRecipient.getAddress(), '1CcZWwCpACJL3AxqoDbwEt4JgDFuTHUspE')
+    var forRecipient = stealthReceive(recipient.privateKey, nonce.publicKey)
+    assert.equal(getAddress(forRecipient), '1CcZWwCpACJL3AxqoDbwEt4JgDFuTHUspE')
     assert.equal(forRecipient.toWIF(), 'L1yjUN3oYyCXV3LcsBrmxCNTa62bZKWCybxVJMvqjMmmfDE8yk7n')
 
     // sender and recipient, both derived same address
-    assert.equal(forSender.getAddress(), forRecipient.getAddress())
+    assert.equal(getAddress(forSender), getAddress(forRecipient))
   })
 
   it('can generate a single-key stealth address (randomly)', function () {
@@ -91,15 +96,15 @@ describe('bitcoinjs-lib (crypto)', function () {
     var nonce = bitcoin.ECPair.makeRandom() // private to sender
 
     // ... recipient reveals public key (recipient.Q) to sender
-    var forSender = stealthSend(nonce.d, recipient.Q)
+    var forSender = stealthSend(nonce.privateKey, recipient.publicKey)
     assert.throws(function () { forSender.toWIF() }, /Error: Missing private key/)
 
     // ... sender reveals nonce public key (nonce.Q) to recipient
-    var forRecipient = stealthReceive(recipient.d, nonce.Q)
+    var forRecipient = stealthReceive(recipient.privateKey, nonce.publicKey)
     assert.doesNotThrow(function () { forRecipient.toWIF() })
 
     // sender and recipient, both derived same address
-    assert.equal(forSender.getAddress(), forRecipient.getAddress())
+    assert.equal(getAddress(forSender), getAddress(forRecipient))
   })
 
   it('can recover parent recipient.d, if a derived private key is leaked [and nonce was revealed]', function () {
@@ -107,15 +112,15 @@ describe('bitcoinjs-lib (crypto)', function () {
     var nonce = bitcoin.ECPair.makeRandom() // private to sender
 
     // ... recipient reveals public key (recipient.Q) to sender
-    var forSender = stealthSend(nonce.d, recipient.Q)
+    var forSender = stealthSend(nonce.privateKey, recipient.publicKey)
     assert.throws(function () { forSender.toWIF() }, /Error: Missing private key/)
 
     // ... sender reveals nonce public key (nonce.Q) to recipient
-    var forRecipient = stealthReceive(recipient.d, nonce.Q)
+    var forRecipient = stealthReceive(recipient.privateKey, nonce.publicKey)
     assert.doesNotThrow(function () { forRecipient.toWIF() })
 
     // ... recipient accidentally leaks forRecipient.d on the blockchain
-    var leaked = stealthRecoverLeaked(forRecipient.d, nonce.d, recipient.Q)
+    var leaked = stealthRecoverLeaked(forRecipient.privateKey, nonce.privateKey, recipient.publicKey)
     assert.equal(leaked.toWIF(), recipient.toWIF())
   })
 
@@ -126,20 +131,20 @@ describe('bitcoinjs-lib (crypto)', function () {
     var nonce = bitcoin.ECPair.fromWIF('KxVqB96pxbw1pokzQrZkQbLfVBjjHFfp2mFfEp8wuEyGenLFJhM9') // private to sender
 
     // ... recipient reveals public key(s) (recipient.Q, scan.Q) to sender
-    var forSender = stealthDualSend(nonce.d, recipient.Q, scan.Q)
+    var forSender = stealthDualSend(nonce.privateKey, recipient.publicKey, scan.publicKey)
     assert.throws(function () { forSender.toWIF() }, /Error: Missing private key/)
 
     // ... sender reveals nonce public key (nonce.Q) to scanner
-    var forScanner = stealthDualScan(scan.d, recipient.Q, nonce.Q)
+    var forScanner = stealthDualScan(scan.privateKey, recipient.publicKey, nonce.publicKey)
     assert.throws(function () { forScanner.toWIF() }, /Error: Missing private key/)
 
     // ... scanner reveals relevant transaction + nonce public key (nonce.Q) to recipient
-    var forRecipient = stealthDualReceive(scan.d, recipient.d, nonce.Q)
+    var forRecipient = stealthDualReceive(scan.privateKey, recipient.privateKey, nonce.publicKey)
     assert.doesNotThrow(function () { forRecipient.toWIF() })
 
     // scanner, sender and recipient, all derived same address
-    assert.equal(forSender.getAddress(), forScanner.getAddress())
-    assert.equal(forSender.getAddress(), forRecipient.getAddress())
+    assert.equal(getAddress(forSender), getAddress(forScanner))
+    assert.equal(getAddress(forSender), getAddress(forRecipient))
   })
 
   it('can generate a dual-key stealth address (randomly)', function () {
@@ -148,19 +153,19 @@ describe('bitcoinjs-lib (crypto)', function () {
     var nonce = bitcoin.ECPair.makeRandom() // private to sender
 
     // ... recipient reveals public key(s) (recipient.Q, scan.Q) to sender
-    var forSender = stealthDualSend(nonce.d, recipient.Q, scan.Q)
+    var forSender = stealthDualSend(nonce.privateKey, recipient.publicKey, scan.publicKey)
     assert.throws(function () { forSender.toWIF() }, /Error: Missing private key/)
 
     // ... sender reveals nonce public key (nonce.Q) to scanner
-    var forScanner = stealthDualScan(scan.d, recipient.Q, nonce.Q)
+    var forScanner = stealthDualScan(scan.privateKey, recipient.publicKey, nonce.publicKey)
     assert.throws(function () { forScanner.toWIF() }, /Error: Missing private key/)
 
     // ... scanner reveals relevant transaction + nonce public key (nonce.Q) to recipient
-    var forRecipient = stealthDualReceive(scan.d, recipient.d, nonce.Q)
+    var forRecipient = stealthDualReceive(scan.privateKey, recipient.privateKey, nonce.publicKey)
     assert.doesNotThrow(function () { forRecipient.toWIF() })
 
     // scanner, sender and recipient, all derived same address
-    assert.equal(forSender.getAddress(), forScanner.getAddress())
-    assert.equal(forSender.getAddress(), forRecipient.getAddress())
+    assert.equal(getAddress(forSender), getAddress(forScanner))
+    assert.equal(getAddress(forSender), getAddress(forRecipient))
   })
 })

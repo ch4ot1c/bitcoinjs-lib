@@ -1,24 +1,29 @@
 /* global describe, it, beforeEach */
 
-var assert = require('assert')
-var baddress = require('../src/address')
-var bscript = require('../src/script')
-var btemplates = require('../src/templates')
-var ops = require('bitcoin-ops')
+let assert = require('assert')
+let baddress = require('../src/address')
+let bcrypto = require('../src/crypto')
+let bscript = require('../src/script')
+let btemplates = require('../src/templates')
+let ops = require('bitcoin-ops')
 
-var BigInteger = require('bigi')
-var ECPair = require('../src/ecpair')
-var Transaction = require('../src/transaction')
-var TransactionBuilder = require('../src/transaction_builder')
-var NETWORKS = require('../src/networks')
+let ECPair = require('../src/ecpair')
+let Transaction = require('../src/transaction')
+let TransactionBuilder = require('../src/transaction_builder')
+let NETWORKS = require('../src/networks')
 
-var fixtures = require('./fixtures/transaction_builder')
+let fixtures = require('./fixtures/transaction_builder')
+
+// TODO: remove
+function getAddress (node) {
+  return baddress.toBase58Check(bcrypto.hash160(node.publicKey), NETWORKS.bitcoin.pubKeyHash)
+}
 
 function construct (f, dontSign) {
   var network = NETWORKS[f.network]
   var txb = new TransactionBuilder(network)
 
-  if (f.version !== undefined) txb.setVersion(f.version)
+  if (Number.isFinite(f.version)) txb.setVersion(f.version)
   if (f.locktime !== undefined) txb.setLockTime(f.locktime)
 
   f.inputs.forEach(function (input) {
@@ -83,7 +88,7 @@ function construct (f, dontSign) {
 
 describe('TransactionBuilder', function () {
   // constants
-  var keyPair = new ECPair(BigInteger.ONE)
+  var keyPair = ECPair.fromPrivateKey(Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex'))
   var scripts = [
     '1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH',
     '1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP'
@@ -133,10 +138,11 @@ describe('TransactionBuilder', function () {
       })
     })
 
-    it('correctly classifies transaction inputs', function () {
+    it('classifies transaction inputs', function () {
       var tx = Transaction.fromHex(fixtures.valid.classification.hex)
       var txb = TransactionBuilder.fromTransaction(tx)
-      txb.inputs.forEach(function (i) {
+
+      txb.__inputs.forEach(function (i) {
         assert.strictEqual(i.prevOutType, 'scripthash')
         assert.strictEqual(i.redeemScriptType, 'multisig')
         assert.strictEqual(i.signType, 'multisig')
@@ -164,22 +170,22 @@ describe('TransactionBuilder', function () {
       var vin = txb.addInput(txHash, 1, 54)
       assert.strictEqual(vin, 0)
 
-      var txIn = txb.tx.ins[0]
+      var txIn = txb.__tx.ins[0]
       assert.strictEqual(txIn.hash, txHash)
       assert.strictEqual(txIn.index, 1)
       assert.strictEqual(txIn.sequence, 54)
-      assert.strictEqual(txb.inputs[0].prevOutScript, undefined)
+      assert.strictEqual(txb.__inputs[0].prevOutScript, undefined)
     })
 
     it('accepts a txHash, index [, sequence number and scriptPubKey]', function () {
       var vin = txb.addInput(txHash, 1, 54, scripts[1])
       assert.strictEqual(vin, 0)
 
-      var txIn = txb.tx.ins[0]
+      var txIn = txb.__tx.ins[0]
       assert.strictEqual(txIn.hash, txHash)
       assert.strictEqual(txIn.index, 1)
       assert.strictEqual(txIn.sequence, 54)
-      assert.strictEqual(txb.inputs[0].prevOutScript, scripts[1])
+      assert.strictEqual(txb.__inputs[0].prevOutScript, scripts[1])
     })
 
     it('accepts a prevTx, index [and sequence number]', function () {
@@ -190,11 +196,11 @@ describe('TransactionBuilder', function () {
       var vin = txb.addInput(prevTx, 1, 54)
       assert.strictEqual(vin, 0)
 
-      var txIn = txb.tx.ins[0]
+      var txIn = txb.__tx.ins[0]
       assert.deepEqual(txIn.hash, prevTx.getHash())
       assert.strictEqual(txIn.index, 1)
       assert.strictEqual(txIn.sequence, 54)
-      assert.strictEqual(txb.inputs[0].prevOutScript, scripts[1])
+      assert.strictEqual(txb.__inputs[0].prevOutScript, scripts[1])
     })
 
     it('returns the input index', function () {
@@ -219,10 +225,11 @@ describe('TransactionBuilder', function () {
     })
 
     it('accepts an address string and value', function () {
-      var vout = txb.addOutput(keyPair.getAddress(), 1000)
+      let address = getAddress(keyPair)
+      var vout = txb.addOutput(address, 1000)
       assert.strictEqual(vout, 0)
 
-      var txout = txb.tx.outs[0]
+      var txout = txb.__tx.outs[0]
       assert.deepEqual(txout.script, scripts[0])
       assert.strictEqual(txout.value, 1000)
     })
@@ -231,7 +238,7 @@ describe('TransactionBuilder', function () {
       var vout = txb.addOutput(scripts[0], 1000)
       assert.strictEqual(vout, 0)
 
-      var txout = txb.tx.outs[0]
+      var txout = txb.__tx.outs[0]
       assert.deepEqual(txout.script, scripts[0])
       assert.strictEqual(txout.value, 1000)
     })
@@ -297,14 +304,15 @@ describe('TransactionBuilder', function () {
     it('supports the alternative abstract interface { publicKey, sign }', function () {
       var keyPair = {
         publicKey: Buffer.alloc(33, 0x03),
-        sign: function (hash) { return Buffer.alloc(64) }
+        sign: function (hash) { return Buffer.alloc(64, 0x5f) }
       }
 
       var txb = new TransactionBuilder()
+      txb.setVersion(1)
       txb.addInput('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 1)
       txb.addOutput('1111111111111111111114oLvT2', 100000)
       txb.sign(0, keyPair)
-      assert.equal(txb.build().toHex(), '0100000001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff010000002c0930060201000201000121030303030303030303030303030303030303030303030303030303030303030303ffffffff01a0860100000000001976a914000000000000000000000000000000000000000088ac00000000')
+      assert.equal(txb.build().toHex(), '0100000001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff010000006a47304402205f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f02205f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f0121030303030303030303030303030303030303030303030303030303030303030303ffffffff01a0860100000000001976a914000000000000000000000000000000000000000088ac00000000')
     })
 
     fixtures.invalid.sign.forEach(function (f) {
@@ -504,10 +512,10 @@ describe('TransactionBuilder', function () {
       '194a565cd6aa4cc38b8eaffa343402201c5b4b61d73fa38e49c1ee68cc0e6dfd2f5dae453dd86eb142e87a' +
       '0bafb1bc8401210283409659355b6d1cc3c32decd5d561abaac86c37a353b52895a5e6c196d6f44800000000'
       var txb = TransactionBuilder.fromTransaction(Transaction.fromHex(rawtx))
-      txb.inputs[0].value = 241530
-      txb.inputs[1].value = 241530
-      txb.inputs[2].value = 248920
-      txb.inputs[3].value = 248920
+      txb.__inputs[0].value = 241530
+      txb.__inputs[1].value = 241530
+      txb.__inputs[2].value = 248920
+      txb.__inputs[3].value = 248920
 
       assert.throws(function () {
         txb.build()
@@ -520,6 +528,7 @@ describe('TransactionBuilder', function () {
       var redeemScript = Buffer.from('002024376a0a9abab599d0e028248d48ebe817bc899efcffa1cd2984d67289daf5af', 'hex')
       var scriptPubKey = Buffer.from('a914b64f1a3eacc1c8515592a6f10457e8ff90e4db6a87', 'hex')
       var txb = new TransactionBuilder(network)
+      txb.setVersion(1)
       txb.addInput('a4696c4b0cd27ec2e173ab1fa7d1cc639a98ee237cec95a77ca7ff4145791529', 1, 0xffffffff, scriptPubKey)
       txb.addOutput(scriptPubKey, 99000)
       txb.sign(0, keyPair, redeemScript, null, 100000, witnessScript)
@@ -530,7 +539,7 @@ describe('TransactionBuilder', function () {
       var txHex = tx.toHex()
       var newTxb = TransactionBuilder.fromTransaction(Transaction.fromHex(txHex))
       // input should have the key 'witness' set to true
-      assert.equal(newTxb.inputs[0].witness, true)
+      assert.equal(newTxb.__inputs[0].witness, true)
     })
 
     it('should handle badly pre-filled OP_0s', function () {
@@ -554,23 +563,24 @@ describe('TransactionBuilder', function () {
     })
 
     it('should not classify blank scripts as nonstandard', function () {
-      var tx = new TransactionBuilder()
-      tx.addInput('aa94ab02c182214f090e99a0d57021caffd0f195a81c24602b1028b130b63e31', 0)
+      var txb = new TransactionBuilder()
+      txb.setVersion(1)
+      txb.addInput('aa94ab02c182214f090e99a0d57021caffd0f195a81c24602b1028b130b63e31', 0)
 
-      var incomplete = tx.buildIncomplete().toHex()
+      var incomplete = txb.buildIncomplete().toHex()
       var keyPair = ECPair.fromWIF('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy')
 
       // sign, as expected
-      tx.addOutput('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 15000)
-      tx.sign(0, keyPair)
-      var txId = tx.build().getId()
+      txb.addOutput('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 15000)
+      txb.sign(0, keyPair)
+      var txId = txb.build().getId()
       assert.equal(txId, '54f097315acbaedb92a95455da3368eb45981cdae5ffbc387a9afc872c0f29b3')
 
       // and, repeat
-      tx = TransactionBuilder.fromTransaction(Transaction.fromHex(incomplete))
-      tx.addOutput('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 15000)
-      tx.sign(0, keyPair)
-      var txId2 = tx.build().getId()
+      txb = TransactionBuilder.fromTransaction(Transaction.fromHex(incomplete))
+      txb.addOutput('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 15000)
+      txb.sign(0, keyPair)
+      var txId2 = txb.build().getId()
       assert.equal(txId, txId2)
     })
   })
