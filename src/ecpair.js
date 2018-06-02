@@ -70,7 +70,7 @@ function fromWIF (string, network) {
   if (types.Array(network)) {
     network = network.filter(function (x) {
       return version === x.wif
-    }).pop()
+    })[0]
 
     if (!network) throw new Error('Unknown network version')
 
