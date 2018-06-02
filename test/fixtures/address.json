@@ -111,11 +111,11 @@
     "fromBase58Check": [
       {
         "address": "7SeEnXWPaCCALbVrTnszCVGfRU8cGfx",
-        "exception": "is too short"
+        "exception": "should be 21 bytes"
       },
       {
         "address": "j9ywUkWg2fTQrouxxh5rSZhRvrjMkEUfuiKe",
-        "exception": "is too long"
+        "exception": "should be 21 bytes"
       }
     ],
     "fromOutputScript": [

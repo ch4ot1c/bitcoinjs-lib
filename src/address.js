@@ -11,7 +11,7 @@ function fromBase58Check (address, network) {
   network = network || networks.bitcoin
   var payload = bs58check.decode(address)
 
-  var numVersionBytes = Math.floor(network.pubKeyHash/256) + 1
+  var numVersionBytes = Math.floor(network.pubKeyHash / 256) + 1
   var numPayloadBytes = numVersionBytes + 20
 
   if (payload.length !== numPayloadBytes) throw new TypeError(address + ' should be ' + numPayloadBytes + ' bytes')
@@ -36,17 +36,16 @@ function fromBech32 (address) {
 function toBase58Check (hash, version) {
   typeforce(types.tuple(types.Hash160bit, typeforce.oneOf(types.UInt8, types.UInt16)), arguments)
 
-  var numVersionBytes = Math.floor(version/256) + 1
+  var numVersionBytes = Math.floor(version / 256) + 1
   var numPayloadBytes = numVersionBytes + 20
 
   var payload = Buffer.allocUnsafe(numPayloadBytes)
-  payload.writeUInt(version, 0, numVersionBytes)
+  payload.writeUIntBE(version, 0, numVersionBytes)
 
   hash.copy(payload, numVersionBytes)
 
   return bs58check.encode(payload)
 }
-
 
 function toBech32 (data, version, prefix) {
   var words = bech32.toWords(data)
