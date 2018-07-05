@@ -7,8 +7,6 @@ const varuint = require('varuint-bitcoin')
 
 const Transaction = require('./transaction')
 
-const Z = false
-
 const EQUIHASH_NOSOLUTION_HEADER_SIZE = 140
 const getEquihashSolutionSize = function (n, k) {
   return (1 << k) * (n / (k + 1) + 1) / 8
@@ -18,8 +16,8 @@ console.log(EQUIHASH_SOLUTION_SIZE) // 1344
 
 const BITCOIN_HEADER_SIZE = 80
 
-// TODO bitcoin network arg required for sha256/80 vs equihash/1484?
 // TODO theoretically, algo could change between any 2 blocks, so should be defined for each
+const Z = false // Enable Z-coin related code (Bitcoin Private; Equihash 200,9)
 function Block () {
   this.version = 1
   this.prevHash = null
@@ -30,7 +28,7 @@ function Block () {
   this.timestamp = 0
   this.bits = 0
   this.nonce = Z ? null : 0
-  // TODO varintnum+non-reverse()uint32 this.solution
+  // TODO varintnum+non-reverse()uint32 this.solution (withSolution)
 }
 
 Block.fromBuffer = function (buffer) {
