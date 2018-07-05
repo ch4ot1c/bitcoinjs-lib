@@ -35,8 +35,9 @@ module.exports = {
     scriptHash: 0x13af,
     wif: 0x80,
     z: {
-      addrBytes: 0x16a8,
-      skBytes: 0xab36
+      addrVersion: [0x16, 0xa8], // zk
+      skVersion: [0xab, 0x36], // SK
+      vkVersion: [0xA8, 0xAB, 0xD3] // ZiVK
     }
   },
   bitcoinprivateTestnet: {
@@ -50,8 +51,9 @@ module.exports = {
     scriptHash: 0x19e0,
     wif: 0xef,
     z: {
-      addrBytes: 0x16c0,
-      skBytes: 0xac08
+      addrVersion: [0x16, 0xc0], // zz
+      skVersion: [0xac, 0x08], // ST
+      vkVersion:[0xA8, 0xAC, 0x0C] // ZiVT
     }
   },
   zclassic: {
@@ -64,8 +66,9 @@ module.exports = {
     scriptHash: 0x1cbd,
     wif: 0x80,
     z: {
-      addrBytes: 0x169a,
-      skBytes: 0xab36
+      addrVersion: [0x16, 0x9a],
+      skVersion: [0xab, 0x36],
+      vkVersion: [0xA8, 0xAB, 0xD3] // ZiVK
     }
   },
   zclassicTestnet: {
@@ -78,8 +81,9 @@ module.exports = {
     scriptHash: 0x1cba,
     wif: 0xef,
     z: {
-      addrBytes: 0x16b6,
-      skBytes: 0xac08
+      addrVersion: [0x16, 0xb6],
+      skVersion: [0xac, 0x08],
+      vkVersion: [0xA8, 0xAC, 0x0C] // ZiVT
     }
   }
 }
