@@ -3,10 +3,11 @@ const crypto = require('crypto')
 const networks = require('./networks')
 const bcrypto = require('./crypto')
 const nacl = require('tweetnacl')
-// const sha256 = require('./sha256')
+const sha256 = require('./z_sha256')
 
 
-/* TODO ZCASH
+// TODO ZCASH
+/*
 const networks = {
   zcash: { z: {
     skVersion: [0xAB, 0x36], // Guarantees the first 2 characters, when base58 encoded, are "SK"
@@ -45,7 +46,9 @@ function PRF (key, t) {
   buffer[0] |= 0xc0
   buffer[32] = t
 
-  return bcrypto.sha256(buffer, { noPreprocess: true, asBytes: true })
+  return sha256(buffer, { noPreprocess: true, asBytes: true })
+  // const c = require('crypto')
+  // c.createHash('sha256').update(buffer) // Doesn't match
 }
 
 // Generates the SHA256 hash of a formatted spending key and encoded
@@ -56,28 +59,11 @@ function encodedPRF (key) {
   return nacl.scalarMult.base(Uint8Array.from(address))
 }
 
-// Util
-function toHexString(byteArray) {
-  return Array.from(byteArray, function(byte) {
-    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
-  }).join('')
-}
-function toByteArray(hexString) {
-  var result = [];
-  while (hexString.length >= 2) {
-    result.push(parseInt(hexString.substring(0, 2), 16));
-    hexString = hexString.substring(2, hexString.length);
-  }
-  return result;
-}
-
 // Creates a spending key.
 function createSpendingKey (version) {
   const buffer = crypto.randomBytes(32)
   buffer[0] &= 0x0f
-  //console.log(version)
-  const skV = Array.from(version)
-  const bufferHeader = Buffer.from(skV)
+  const bufferHeader = Buffer.from(version)
   return bs58check.encode(Buffer.concat([bufferHeader, buffer]))
 }
 
@@ -90,10 +76,7 @@ function convertSpendingKeyToViewingKey (key, skVersion, vkVersion) {
   const prefix = decode.slice(0, 2)
   const payload = decode.slice(2)
 
-  const skV = Array.from(skVersion)
-  const vkV = Array.from(vkVersion)
-
-  if (!prefix[0] === skV[0] || prefix[1] !== skV[1]) {
+  if (!prefix[0] === skVersion[0] || prefix[1] !== skVersion[1]) {
     throw new Error('Invalid spending key version')
   }
 
@@ -103,7 +86,7 @@ function convertSpendingKeyToViewingKey (key, skVersion, vkVersion) {
   keyB[31] &= 127
   keyB[31] |= 64
 
-  const bufferH = Buffer.from(vkV)
+  const bufferH = Buffer.from(vkVersion)
   const bufferA = Buffer.from(keyA)
   const bufferB = Buffer.from(keyB)
 
@@ -148,28 +131,28 @@ function convertSpendingKeyToAddress (key, skVersion, addrVersion) {
 
 // Generates a random spending key.
 function generateSpendingKey (network) {
-  const zParams = networks[network].z
+  const zParams = network.z
   return createSpendingKey(zParams.skVersion)
 }
 
 // Generates the address associated with a given spending key.
 function generateAddressFromSpendingKey (key, network) {
-  const zParams = networks[network].z
+  const zParams = network.z
   return convertSpendingKeyToAddress(key, zParams.skVersion, zParams.addrVersion)
 }
 
 // Generates the viewing key associated with a given spending key.
 function generateViewingKeyFromSpendingKey (key, network) {
-  const zParams = networks[network].z
+  const zParams = network.z
   return convertSpendingKeyToViewingKey(key, zParams.skVersion, zParams.vkVersion)
 }
 
 // Generates a Zcash private wallet.
 function generateAllFromSpendingKey (network) {
-  const zParams = networks[network].z
-  const spendingKey = generateSpendingKey(zParams.skVersion)
-  const viewingKey = generateViewingKeyFromSpendingKey(spendingKey, zParams.skVersion, zParams.vkVersion)
-  const address = generateAddressFromSpendingKey(spendingKey, zParams.skVersion, zParams.addrVersion)
+  const zParams = network.z
+  const spendingKey = generateSpendingKey(network)
+  const viewingKey = generateViewingKeyFromSpendingKey(spendingKey, network)
+  const address = generateAddressFromSpendingKey(spendingKey, network)
   return { spendingKey: spendingKey, viewingKey: viewingKey, address: address }
 }
 

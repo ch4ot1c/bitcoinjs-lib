@@ -85,5 +85,20 @@ module.exports = {
       skVersion: [0xac, 0x08],
       vkVersion: [0xA8, 0xAC, 0x0C] // ZiVT
     }
-  }
+  },
+  zcash: {
+    messagePrefix: '\x19Zcash Signed Message:\n',
+    bip32: {
+      public: 0x0488b21e,
+      private: 0x0488ade4
+    },
+    pubKeyHash: 0x1cb8,
+    scriptHash: 0x1cbd,
+    wif: 0x80,
+    z: {
+      addrVersion: [0x16, 0x9a],
+      skVersion: [0xab, 0x36],
+      vkVersion: [0xA8, 0xAB, 0xD3] // ZiVK
+    }
+  } /* TODO ZCASH TESTNET */
 }
