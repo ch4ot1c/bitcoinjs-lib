@@ -7,17 +7,38 @@ const varuint = require('varuint-bitcoin')
 
 const Transaction = require('./transaction')
 
+const Z = false
+
+const EQUIHASH_NOSOLUTION_HEADER_SIZE = 140
+const getEquihashSolutionSize = function (n, k) {
+  return (1 << k) * (n / (k + 1) + 1) / 8
+}
+const EQUIHASH_SOLUTION_SIZE = getEquihashSolutionSize(200, 9)
+console.log(EQUIHASH_SOLUTION_SIZE) // 1344
+
+const BITCOIN_HEADER_SIZE = 80
+
+// TODO bitcoin network arg required for sha256/80 vs equihash/1484?
+// TODO theoretically, algo could change between any 2 blocks, so should be defined for each
 function Block () {
   this.version = 1
   this.prevHash = null
   this.merkleRoot = null
+  if (Z) {
+    this.reservedHash = null
+  }
   this.timestamp = 0
   this.bits = 0
-  this.nonce = 0
+  this.nonce = Z ? null : 0
+  // TODO varintnum+non-reverse()uint32 this.solution
 }
 
 Block.fromBuffer = function (buffer) {
-  if (buffer.length < 80) throw new Error('Buffer too small (< 80 bytes)')
+  if (buffer.length < BITCOIN_HEADER_SIZE) throw new Error('Buffer too small (< 80 bytes)')
+
+  if (Z && buffer.length < EQUIHASH_NOSOLUTION_HEADER_SIZE) {
+    throw new Error('Buffer too small (< 140 bytes)')
+  }
 
   let offset = 0
   function readSlice (n) {
@@ -41,11 +62,18 @@ Block.fromBuffer = function (buffer) {
   block.version = readInt32()
   block.prevHash = readSlice(32)
   block.merkleRoot = readSlice(32)
+  if (Z) {
+    block.reservedHash = readSlice(32)
+  }
   block.timestamp = readUInt32()
   block.bits = readUInt32()
-  block.nonce = readUInt32()
+  if (Z) {
+    block.nonce = readSlice(32)
+  } else {
+    block.nonce = readUInt32()
+  }
 
-  if (buffer.length === 80) return block
+  if ([BITCOIN_HEADER_SIZE, EQUIHASH_NOSOLUTION_HEADER_SIZE].includes(buffer.length)) return block
 
   function readVarInt () {
     const vi = varuint.decode(buffer, offset)
@@ -71,9 +99,10 @@ Block.fromBuffer = function (buffer) {
 }
 
 Block.prototype.byteLength = function (headersOnly) {
-  if (headersOnly || !this.transactions) return 80
+  let headerSize = Z ? EQUIHASH_NOSOLUTION_HEADER_SIZE : BITCOIN_HEADER_SIZE
+  if (headersOnly || !this.transactions) return headerSize
 
-  return 80 + varuint.encodingLength(this.transactions.length) + this.transactions.reduce(function (a, x) {
+  return headerSize + varuint.encodingLength(this.transactions.length) + this.transactions.reduce(function (a, x) {
     return a + x.byteLength()
   }, 0)
 }
@@ -119,9 +148,16 @@ Block.prototype.toBuffer = function (headersOnly) {
   writeInt32(this.version)
   writeSlice(this.prevHash)
   writeSlice(this.merkleRoot)
+  if (Z) {
+    writeSlice(this.reservedHash)
+  }
   writeUInt32(this.timestamp)
   writeUInt32(this.bits)
-  writeUInt32(this.nonce)
+  if (Z) {
+    writeSlice(this.nonce)
+  } else {
+    writeUInt32(this.nonce)
+  }
 
   if (headersOnly || !this.transactions) return buffer
 
@@ -143,7 +179,7 @@ Block.prototype.toHex = function (headersOnly) {
 
 Block.calculateTarget = function (bits) {
   const exponent = ((bits & 0xff000000) >> 24) - 3
-  const mantissa = bits & 0x007fffff
+  const mantissa = bits & (Z ? 0x1f07ffff : 0x007fffff)
   const target = Buffer.alloc(32, 0)
   target.writeUInt32BE(mantissa, 28 - exponent)
   return target
