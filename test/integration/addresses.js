@@ -47,6 +47,36 @@ const BITCOINPRIVATE_TESTNET = {
   }
 }
 
+const ZCLASSIC = {
+  messagePrefix: '\x19Zcash Signed Message:\n',
+  bip32: {
+    public: 0x0488b21e,
+    private: 0x0488ade4
+  },
+  pubKeyHash: 0x1cb8,
+  scriptHash: 0x1cbd,
+  wif: 0x80,
+  z: {
+    addrBytes: 0x169a,
+    skBytes: 0xab36
+  }
+}
+
+const ZCLASSIC_TESTNET = {
+  messagePrefix: '\x19Zcash Signed Message:\n',
+  bip32: {
+    public: 0x043587cf,
+    private: 0x04358394
+  },
+  pubKeyHash: 0x1d25,
+  scriptHash: 0x1cba,
+  wif: 0xef,
+  z: {
+    addrBytes: 0x16b6,
+    skBytes: 0xac08
+  }
+}
+
 // deterministic RNG for testing only
 function rng () { return Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz') }
 
@@ -171,6 +201,15 @@ describe('bitcoinjs-lib (addresses)', function () {
     assert.strictEqual(wif, 'T7A4PUSgTDHecBxW1ZiYFrDNRih2o7M8Gf9xpoCgudPF9gDiNvuS')
   })
 
+  it('can generate a Bitcoin Private address', function () {
+    const keyPair = bitcoin.ECPair.makeRandom({ network: BITCOINPRIVATE, rng: rng })
+    const wif = keyPair.toWIF()
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: BITCOINPRIVATE })
+
+    assert.strictEqual(address, 'b1JYhNY8uVnpaMiUKcgGxzVLKsGyTcFXduC')
+    assert.strictEqual(wif, 'L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
+  })
+
   it('can generate a Bitcoin Private testnet address', function () {
     const keyPair = bitcoin.ECPair.makeRandom({ network: BITCOINPRIVATE_TESTNET, rng: rng })
     const wif = keyPair.toWIF()
@@ -180,12 +219,22 @@ describe('bitcoinjs-lib (addresses)', function () {
     assert.strictEqual(wif, 'cRgnQe9MUu1JznntrLaoQpB476M8PURvXVQB5R2eqms5tXnzNsrr')
   })
 
-  it('can generate a Bitcoin Private address', function () {
-    const keyPair = bitcoin.ECPair.makeRandom({ network: BITCOINPRIVATE, rng: rng })
+  it('can generate a Zclassic address', function () {
+    const keyPair = bitcoin.ECPair.makeRandom({ network: ZCLASSIC, rng: rng })
     const wif = keyPair.toWIF()
-    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: BITCOINPRIVATE })
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: ZCLASSIC })
 
-    assert.strictEqual(address, 'b1JYhNY8uVnpaMiUKcgGxzVLKsGyTcFXduC')
+    assert.strictEqual(address, 't1Xx6hgi3ixa4q5Cebxf7XoTZVfTU6LnV69')
     assert.strictEqual(wif, 'L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
   })
+
+  it('can generate a Zclassic testnet address', function () {
+    const keyPair = bitcoin.ECPair.makeRandom({ network: ZCLASSIC_TESTNET, rng: rng })
+    const wif = keyPair.toWIF()
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: ZCLASSIC_TESTNET })
+
+    assert.strictEqual(address, 'tmPnr2XCT7d5ZyKQ6GgxrPU8K6eYHdcZmvq')
+    assert.strictEqual(wif, 'cRgnQe9MUu1JznntrLaoQpB476M8PURvXVQB5R2eqms5tXnzNsrr')
+  })
+
 })

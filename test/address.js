@@ -4,6 +4,69 @@ const assert = require('assert')
 const baddress = require('../src/address')
 const bscript = require('../src/script')
 const fixtures = require('./fixtures/address.json')
+const BITCOINPRIVATE = {
+  messagePrefix: '\x19BitcoinPrivate Signed Message:\n',
+  bech32: 'p',
+  bip32: {
+    public: 0x0488b21e,
+    private: 0x0488ade4
+  },
+  pubKeyHash: 0x1325,
+  scriptHash: 0x13af,
+  wif: 0x80,
+  z: {
+    addrBytes: 0x16a8,
+    skBytes: 0xab36
+  }
+}
+
+const BITCOINPRIVATE_TESTNET = {
+  messagePrefix: '\x19BitcoinPrivate Signed Message:\n',
+  bech32: 'test',
+  bip32: {
+    public: 0x043587cf,
+    private: 0x04358394
+  },
+  pubKeyHash: 0x1957,
+  scriptHash: 0x19e0,
+  wif: 0xef,
+  z: {
+    addrBytes: 0x16c0,
+    skBytes: 0xac08
+  }
+}
+
+const ZCLASSIC = {
+  messagePrefix: '\x19Zcash Signed Message:\n',
+  bip32: {
+    public: 0x0488b21e,
+    private: 0x0488ade4
+  },
+  pubKeyHash: 0x1cb8,
+  scriptHash: 0x1cbd,
+  wif: 0x80,
+  z: {
+    addrBytes: 0x169a,
+    skBytes: 0xab36
+  }
+}
+
+const ZCLASSIC_TESTNET = {
+  messagePrefix: '\x19Zcash Signed Message:\n',
+  bip32: {
+    public: 0x043587cf,
+    private: 0x04358394
+  },
+  pubKeyHash: 0x1d25,
+  scriptHash: 0x1cba,
+  wif: 0xef,
+  z: {
+    addrBytes: 0x16b6,
+    skBytes: 0xac08
+  }
+}
+
+// Assign
 const NETWORKS = Object.assign({
   litecoin: {
     messagePrefix: '\x19Litecoin Signed Message:\n',

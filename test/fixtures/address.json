@@ -29,6 +29,20 @@
       "script": "OP_DUP OP_HASH160 6ac624143d19a3c91d2ac5605f0aebdfeac5b826 OP_EQUALVERIFY OP_CHECKSIG"
     },
     {
+      "network": "zclassic",
+      "version": 7352,
+      "hash": "65a16059864a2fdbc7c99a4723a8395bc6f188eb",
+      "base58check": "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF",
+      "script": "OP_DUP OP_HASH160 65a16059864a2fdbc7c99a4723a8395bc6f188eb OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    {
+      "network": "zclassic",
+      "version": 7352,
+      "hash": "6d23156cbbdcc82a5a47eee4c2c7c583c18b6bf4",
+      "base58check": "t1TpfguJj5zxKUfWcsNTrh6eod2XXsTKtvB",
+      "script": "OP_DUP OP_HASH160 6d23156cbbdcc82a5a47eee4c2c7c583c18b6bf4 OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    {
       "network": "testnet",
       "version": 111,
       "hash": "751e76e8199196d454941c45d1b3a323f1433bd6",
@@ -111,11 +125,11 @@
     "fromBase58Check": [
       {
         "address": "7SeEnXWPaCCALbVrTnszCVGfRU8cGfx",
-        "exception": "should be 21 bytes"
+        "exception": "is too short"
       },
       {
         "address": "j9ywUkWg2fTQrouxxh5rSZhRvrjMkEUfuiKe",
-        "exception": "should be 21 bytes"
+        "exception": "is too long"
       }
     ],
     "fromOutputScript": [
@@ -179,4 +193,3 @@
     ]
   }
 }
-
