@@ -1,15 +1,15 @@
-var Buffer = require('safe-buffer').Buffer
-var bech32 = require('bech32')
-var bs58check = require('bs58check')
-var bscript = require('./script')
-var btemplates = require('./templates')
-var networks = require('./networks')
-var typeforce = require('typeforce')
-var types = require('./types')
+const Buffer = require('safe-buffer').Buffer
+const bech32 = require('bech32')
+const bs58check = require('bs58check')
+const bscript = require('./script')
+const btemplates = require('./templates')
+const networks = require('./networks')
+const typeforce = require('typeforce')
+const types = require('./types')
 
 function fromBase58Check (address, network) {
   network = network || networks.bitcoin
-  var payload = bs58check.decode(address)
+  const payload = bs58check.decode(address)
 
   var numVersionBytes = Math.floor(network.pubKeyHash / 256) + 1
   var numPayloadBytes = numVersionBytes + 20
@@ -23,8 +23,8 @@ function fromBase58Check (address, network) {
 }
 
 function fromBech32 (address) {
-  var result = bech32.decode(address)
-  var data = bech32.fromWords(result.words.slice(1))
+  const result = bech32.decode(address)
+  const data = bech32.fromWords(result.words.slice(1))
 
   return {
     version: result.words[0],
@@ -39,7 +39,7 @@ function toBase58Check (hash, version) {
   var numVersionBytes = Math.floor(version / 256) + 1
   var numPayloadBytes = numVersionBytes + 20
 
-  var payload = Buffer.allocUnsafe(numPayloadBytes)
+  const payload = Buffer.allocUnsafe(numPayloadBytes)
   payload.writeUIntBE(version, 0, numVersionBytes)
 
   hash.copy(payload, numVersionBytes)
@@ -48,7 +48,7 @@ function toBase58Check (hash, version) {
 }
 
 function toBech32 (data, version, prefix) {
-  var words = bech32.toWords(data)
+  const words = bech32.toWords(data)
   words.unshift(version)
 
   return bech32.encode(prefix, words)
@@ -68,7 +68,7 @@ function fromOutputScript (outputScript, network) {
 function toOutputScript (address, network) {
   network = network || networks.bitcoin
 
-  var decode
+  let decode
   try {
     decode = fromBase58Check(address)
   } catch (e) {}
