@@ -1,12 +1,15 @@
-# BitcoinJS (bitcoinjs-lib)
+# BitcoinJS (bitcoinjs-lib-z)
 [![Build Status](https://travis-ci.org/bitcoinjs/bitcoinjs-lib.png?branch=master)](https://travis-ci.org/bitcoinjs/bitcoinjs-lib)
 [![NPM](https://img.shields.io/npm/v/bitcoinjs-lib.svg)](https://www.npmjs.org/package/bitcoinjs-lib)
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-A javascript Bitcoin library for node.js and browsers.
+A javascript Bitcoin & ZKSNARK coin (Bitcoin Private, Zcash, Zclassic, etc.) library for node.js and browsers.
 
 Released under the terms of the [MIT LICENSE](LICENSE).
+
+**Work in Progress! Do not use in production!**
+> Shoutout to @Karel-3D, @str4d for initial changes
 
 ## Should I use this in production?
 If you are thinking of using the *master* branch of this library in production, **stop**.
@@ -90,6 +93,7 @@ Some examples interact (via HTTPS) with a 3rd Party Blockchain Provider (3PBP).
 - [Support the retrieval of transactions for an address (3rd party blockchain)](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/addresses.js#L117)
 - [Generate a Testnet address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/addresses.js#L136)
 - [Generate a Litecoin address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/addresses.js#L146)
+- [Generate a Bitcoin Private address](https://github.com/ch4ot1c/bitcoinjs-lib/blob/master/test/integration/addresses.js#L153)
 - [Create a 1-to-1 Transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L21)
 - [Create a 2-to-2 Transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L36)
 - [Create (and broadcast via 3PBP) a typical Transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L55)

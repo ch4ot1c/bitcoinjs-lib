@@ -15,9 +15,40 @@ const LITECOIN = {
   wif: 0xb0
 }
 
+const BITCOINPRIVATE = {
+  messagePrefix: '\x19BitcoinPrivate Signed Message:\n',
+  bech32: 'p',
+  bip32: {
+    public: 0x0488b21e,
+    private: 0x0488ade4
+  },
+  pubKeyHash: 0x1325,
+  scriptHash: 0x13af,
+  wif: 0x80,
+  z: {
+    addrBytes: 0x16a8,
+    skBytes: 0xab36
+  }
+}
+
+const BITCOINPRIVATE_TESTNET = {
+  messagePrefix: '\x19BitcoinPrivate Signed Message:\n',
+  bech32: 'test',
+  bip32: {
+    public: 0x043587cf,
+    private: 0x04358394
+  },
+  pubKeyHash: 0x1957,
+  scriptHash: 0x19e0,
+  wif: 0xef,
+  z: {
+    addrBytes: 0x16c0,
+    skBytes: 0xac08
+  }
+}
+
 // deterministic RNG for testing only
 function rng () { return Buffer.from('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz') }
-function rng2 () { return Buffer.from('yzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzy') }
 
 describe('bitcoinjs-lib (addresses)', function () {
   it('can generate a random address', function () {
@@ -141,32 +172,20 @@ describe('bitcoinjs-lib (addresses)', function () {
   })
 
   it('can generate a Bitcoin Private testnet address', function () {
-    var bitcoinPrivateTestnet = bitcoin.networks.bitcoinPrivateTestnet
-    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivateTestnet, rng: rng })
-    var wif = keyPair.toWIF()
-    var address = keyPair.getAddress()
+    const keyPair = bitcoin.ECPair.makeRandom({ network: BITCOINPRIVATE_TESTNET, rng: rng })
+    const wif = keyPair.toWIF()
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: BITCOINPRIVATE_TESTNET })
 
     assert.strictEqual(address, 'n1UbLzksqZukBR9biS4YS5M245KbXBFYhG7')
     assert.strictEqual(wif, 'cRgnQe9MUu1JznntrLaoQpB476M8PURvXVQB5R2eqms5tXnzNsrr')
   })
 
   it('can generate a Bitcoin Private address', function () {
-    var bitcoinPrivate = bitcoin.networks.bitcoinPrivate
-    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivate, rng: rng })
-    var wif = keyPair.toWIF()
-    var address = keyPair.getAddress()
+    const keyPair = bitcoin.ECPair.makeRandom({ network: BITCOINPRIVATE, rng: rng })
+    const wif = keyPair.toWIF()
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: BITCOINPRIVATE })
 
     assert.strictEqual(address, 'b1JYhNY8uVnpaMiUKcgGxzVLKsGyTcFXduC')
     assert.strictEqual(wif, 'L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
-  })
-
-  it('can generate a second Bitcoin Private address', function () {
-    var bitcoinPrivate = bitcoin.networks.bitcoinPrivate
-    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoinPrivate, rng: rng2 })
-    var wif = keyPair.toWIF()
-    var address = keyPair.getAddress()
-
-    assert.strictEqual(address, 'b1SnupacHs4SJ2uvyLA66TAfsYtcibPZCNa')
-    assert.strictEqual(wif, 'L1HrCYv41ytNcDW3m2C43YMPhww71NdPafcdrkRTSfZ5EoAEN8TX')
   })
 })
