@@ -1,4 +1,5 @@
 /**
+ * From Howard Wu:
  * This file, from the `sha256` library, was ported and modified to support
  * SHA256 pre-processing as an optional flag. All original attribution goes to
  * JP Richardson (MIT License) and authors mentioned in the file.

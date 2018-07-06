@@ -1,3 +1,13 @@
+# 3.3.2-z
+__fixed__
+- Fixed address tests to match `HDNode` removal
+
+__added__
+- Added Equihash, blocks, txs (pre-Overwinter) from [karel-3d/bitcoinjs-lib#zcash](https://github.com/karel-3d/bitcoinjs-lib#zcash)
+- Added z-address support from [howardwu/z_addr](https://github.com/howardwu/zaddr)
+- Added z-address tests
+- Added more networks (Z-coins) (Zclassic, Bitcoin Private)
+
 # 3.2.0
 __added__
 - Added `address.fromBech32/toBech32` (#846)

@@ -1,12 +1,12 @@
 /* global describe, it */
 
 const assert = require('assert')
-//const fixtures = require('./fixtures/zaddress.json')
-const zaddress = require('../src/zaddress')
+//const fixtures = require('./fixtures/z_address.json')
+const zaddress = require('../src/z_address')
 
 const networks = require('../src/networks')
 
-// TODO Zcash
+// TODO move into fixtures
 // Generated using zcashd v1.0.14-RC1.
 const zcashMainnetFixtures = [
   {
@@ -29,7 +29,7 @@ const zcashMainnetFixtures = [
   }
 ]
 
-describe('bitcoinjs-lib zaddress', function () {
+describe('z-addresses', function () {
 
   let zcl = networks['zclassic']
   let zclT = networks['zclassicTestnet']

@@ -1,17 +1,20 @@
 {
-  "name": "bitcoinjs-lib",
-  "version": "3.3.2",
-  "description": "Client-side Bitcoin JavaScript library",
+  "name": "bitcoinjs-lib-z",
+  "version": "3.3.2-z",
+  "description": "Client-side Bitcoin JavaScript library with support for Z-coins",
   "main": "./src/index.js",
   "engines": {
     "node": ">=4.0.0"
   },
   "keywords": [
     "bitcoinjs",
+    "bitcoinjslibz",
     "bitcoin",
     "browserify",
     "javascript",
-    "bitcoinjs"
+    "bitcoinprivate",
+    "zclassic",
+    "zcash"
   ],
   "scripts": {
     "coverage-report": "nyc report --reporter=lcov",
@@ -24,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitcoinjs/bitcoinjs-lib.git"
+    "url": "https://github.com/ch4ot1c/bitcoinjs-lib-z.git"
   },
   "files": [
     "src"

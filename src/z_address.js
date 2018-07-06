@@ -5,22 +5,6 @@ const bcrypto = require('./crypto')
 const nacl = require('tweetnacl')
 const sha256 = require('./z_sha256')
 
-
-// TODO ZCASH
-/*
-const networks = {
-  zcash: { z: {
-    skVersion: [0xAB, 0x36], // Guarantees the first 2 characters, when base58 encoded, are "SK"
-    vkVersion: [0xA8, 0xAB, 0xD3], // Guarantees the first 4 characters, when base58 encoded, are "ZiVK"
-    addrVersion: [0x16, 0x9A] } // Guarantees the first 2 characters, when base58 encoded, are "zc"
-  },
-  zcashTestnet: { z: {
-    skVersion: [0xAC, 0x08], // Guarantees the first 2 characters, when base58 encoded, are "ST"
-    vkVersion: [0xA8, 0xAC, 0x0C], // Guarantees the first 4 characters, when base58 encoded, are "ZiVt"
-    addrVersion: [0x16, 0xB6] } // Guarantees the first 2 characters, when base58 encoded, are "zt"
-  }
-}*/
-
 // Validates the (2 byte) prefix of the given key.
 function validateKey (key) {
   if (key === undefined || key === null) {
@@ -47,6 +31,7 @@ function PRF (key, t) {
   buffer[32] = t
 
   return sha256(buffer, { noPreprocess: true, asBytes: true })
+  // TODO implement using native crypto
   // const c = require('crypto')
   // c.createHash('sha256').update(buffer) // Doesn't match
 }
