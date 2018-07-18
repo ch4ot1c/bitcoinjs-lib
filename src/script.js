@@ -10,6 +10,8 @@ const OPS = require('bitcoin-ops')
 const REVERSE_OPS = require('bitcoin-ops/map')
 const OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
 
+const BTCP = false
+
 function isOPInt (value) {
   return types.Number(value) &&
     ((value === OPS.OP_0) ||
@@ -175,7 +177,7 @@ function isCanonicalPubKey (buffer) {
 }
 
 function isDefinedHashType (hashType) {
-  const hashTypeMod = hashType & ~0x80
+  const hashTypeMod = hashType & ~(BTCP ? 0xc0 : 0x80)
 
   // return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
   return hashTypeMod > 0x00 && hashTypeMod < 0x04

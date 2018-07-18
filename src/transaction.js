@@ -22,6 +22,7 @@ function vectorSize (someVector) {
 }
 
 const Z = false // Enable Z-coin related code (Bitcoin Private; Equihash 200,9)
+const BTCP = false // Replay Protection
 function Transaction () {
   this.version = 1
   this.locktime = 0
@@ -47,6 +48,9 @@ Transaction.SIGHASH_ALL = 0x01
 Transaction.SIGHASH_NONE = 0x02
 Transaction.SIGHASH_SINGLE = 0x03
 Transaction.SIGHASH_ANYONECANPAY = 0x80
+// BTCP
+Transaction.SIGHASH_FORKID = 0x40
+
 Transaction.ADVANCED_TRANSACTION_MARKER = 0x00
 Transaction.ADVANCED_TRANSACTION_FLAG = 0x01
 
@@ -435,9 +439,16 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
     txTmp.ins[inIndex].script = ourScript
   }
 
+  // Replay Protection
+  let forkHashType
+  if (BTCP) {
+    const FORKID_IN_USE = 42
+    forkHashType = hashType | (FORKID_IN_USE << 8)
+  }
+
   // serialize and hash
   const buffer = Buffer.allocUnsafe(txTmp.__byteLength(false) + 4)
-  buffer.writeInt32LE(hashType, buffer.length - 4)
+  buffer.writeInt32LE(BTCP ? forkHashType : hashType, buffer.length - 4)
   txTmp.__toBuffer(buffer, 0, false)
 
   return bcrypto.hash256(buffer)

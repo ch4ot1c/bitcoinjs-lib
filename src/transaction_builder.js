@@ -622,7 +622,7 @@ TransactionBuilder.prototype.sign = function (vin, keyPair, redeemScript, hashTy
   // TODO: remove keyPair.network matching in 4.0.0
   if (keyPair.network && keyPair.network !== this.network) throw new TypeError('Inconsistent network')
   if (!this.__inputs[vin]) throw new Error('No input at index: ' + vin)
-  hashType = hashType || Transaction.SIGHASH_ALL
+  hashType = hashType || (BTCP ? (Transaction.SIGHASH_ALL | Transaction.SIGHASH_FORKID) : Transaction.SIGHASH_ALL)
 
   const input = this.__inputs[vin]
 
