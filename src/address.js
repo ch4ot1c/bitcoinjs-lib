@@ -7,6 +7,8 @@ const typeforce = require('typeforce')
 const types = require('./types')
 const payments = require('./payments')
 
+const Z = false
+
 function fromBase58Check (address) {
   var payload = bs58check.decode(address)
 
@@ -15,6 +17,9 @@ function fromBase58Check (address) {
   if (payload.length > 22) throw new TypeError(address + ' is too long')
 
   var multibyte = payload.length === 22
+  if (Z) {
+    if (!multibyte) throw new TypeError('version is only 1 byte for a z network')
+  }
   var offset = multibyte ? 2 : 1
 
   var version = multibyte ? payload.readUInt16BE(0) : payload.readUInt8(0)
@@ -38,6 +43,9 @@ function toBase58Check (hash, version) {
   typeforce(types.tuple(types.Hash160bit, types.UInt16), arguments)
 
   var multibyte = version > 0xff
+  if (Z) {
+    if (!multibyte) throw new TypeError('version is only 1 byte for a z network')
+  }
   var size = multibyte ? 22 : 21
   var offset = multibyte ? 2 : 1
 

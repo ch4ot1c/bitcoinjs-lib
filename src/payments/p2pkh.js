@@ -8,6 +8,8 @@ const bscript = require('../script')
 const BITCOIN_NETWORK = require('../networks').bitcoin
 const bs58check = require('bs58check')
 
+const Z = false
+
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh (a, opts) {
@@ -33,8 +35,8 @@ function p2pkh (a, opts) {
 
   const _address = lazy.value(function () {
     const payload = bs58check.decode(a.address)
-    const version = payload.readUInt8(0)
-    const hash = payload.slice(1)
+    const version = Z ? payload.readUInt16(0) : payload.readUInt8(0)
+    const hash = payload.slice(Z ? 2 : 1)
     return { version, hash }
   })
   const _chunks = lazy.value(function () { return bscript.decompile(a.input) })
@@ -45,9 +47,14 @@ function p2pkh (a, opts) {
   lazy.prop(o, 'address', function () {
     if (!o.hash) return
 
-    const payload = Buffer.allocUnsafe(21)
-    payload.writeUInt8(network.pubKeyHash, 0)
-    o.hash.copy(payload, 1)
+    const payload = Buffer.allocUnsafe(Z ? 22 : 21)
+    if (Z) {
+      payload.writeUInt16(network.pubKeyHash, 0)
+      o.hash.copy(payload, 2)
+    } else {
+      payload.writeUInt8(network.pubKeyHash, 0)
+      o.hash.copy(payload, 1)
+    }
     return bs58check.encode(payload)
   })
   lazy.prop(o, 'hash', function () {
