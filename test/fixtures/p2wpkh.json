@@ -117,6 +117,24 @@
       }
     },
     {
+      "exception": "Invalid prefix or Network mismatch",
+      "arguments": {
+        "address": "foo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqs30dvv"
+      }
+    },
+    {
+      "exception": "Invalid address version",
+      "arguments": {
+        "address": "bc1pqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5us4ke"
+      }
+    },
+    {
+      "exception": "Invalid address data",
+      "arguments": {
+        "address": "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8"
+      }
+    },
+    {
       "exception": "Hash mismatch",
       "arguments": {
         "pubkey": "030000000000000000000000000000000000000000000000000000000000000001",
@@ -141,6 +159,13 @@
       "exception": "Hash mismatch",
       "arguments": {
         "hash": "ffffffffffffffffffffffffffffffffffffffff",
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000001"
+      }
+    },
+    {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "hash": "ffffffffffffffffffffffffffffffffffffffff",
         "witness": [
           "300602010002010001",
           "030000000000000000000000000000000000000000000000000000000000000001"
@@ -148,7 +173,13 @@
       }
     },
     {
-      "exception": "Input has invalid signature",
+      "exception": "Witness is invalid",
+      "arguments": {
+        "witness": []
+      }
+    },
+    {
+      "exception": "Witness has invalid signature",
       "arguments": {
         "witness": [
           "ffffffffffffffffff",
@@ -157,7 +188,7 @@
       }
     },
     {
-      "exception": "Input has invalid pubkey",
+      "exception": "Witness has invalid pubkey",
       "arguments": {
         "witness": [
           "300602010002010001",

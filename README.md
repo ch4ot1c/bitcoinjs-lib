@@ -29,6 +29,9 @@ Mistakes and bugs happen, but with your help in resolving and reporting [issues]
 - Standardized, using [standard](http://github.com/standard/standard) and Node `Buffer`'s throughout, and
 - Friendly, with a strong and helpful community, ready to answer questions.
 
+## Documentation
+Presently,  we do not have any formal documentation other than our [examples](#Examples), please [ask for help](https://github.com/bitcoinjs/bitcoinjs-lib/issues/new) if our examples aren't enough to guide you.
+
 
 ## Installation
 ``` bash
@@ -100,6 +103,7 @@ Some examples interact (via HTTPS) with a 3rd Party Blockchain Provider (3PBP).
 - [Create (and broadcast via 3PBP) a Transaction with an OP\_RETURN output](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L87)
 - [Create (and broadcast via 3PBP) a Transaction with a 2-of-4 P2SH(multisig) input](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L109)
 - [Create (and broadcast via 3PBP) a Transaction with a SegWit P2SH(P2WPKH) input](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L149)
+- [Create (and broadcast via 3PBP) a Transaction with a SegWit P2WPKH input](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L174)
 - [Create (and broadcast via 3PBP) a Transaction with a SegWit 3-of-4 P2SH(P2WSH(multisig)) input](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L184)
 - [Import a BIP32 testnet xpriv and export to WIF](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/bip32.js#L17)
 - [Export a BIP32 xpriv, then import it](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/bip32.js#L24)

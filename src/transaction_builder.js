@@ -2,13 +2,13 @@ const Buffer = require('safe-buffer').Buffer
 const baddress = require('./address')
 const bcrypto = require('./crypto')
 const bscript = require('./script')
-const btemplates = require('./templates')
 const networks = require('./networks')
 const ops = require('bitcoin-ops')
 const payments = require('./payments')
-const SCRIPT_TYPES = btemplates.types
 const typeforce = require('typeforce')
 const types = require('./types')
+const classify = require('./classify')
+const SCRIPT_TYPES = classify.types
 
 const ECPair = require('./ecpair')
 const Transaction = require('./transaction')
@@ -16,8 +16,8 @@ const Transaction = require('./transaction')
 function expandInput (scriptSig, witnessStack, type, scriptPubKey) {
   if (scriptSig.length === 0 && witnessStack.length === 0) return {}
   if (!type) {
-    let ssType = btemplates.classifyInput(scriptSig, true)
-    let wsType = btemplates.classifyWitness(witnessStack, true)
+    let ssType = classify.input(scriptSig, true)
+    let wsType = classify.witness(witnessStack, true)
     if (ssType === SCRIPT_TYPES.NONSTANDARD) ssType = undefined
     if (wsType === SCRIPT_TYPES.NONSTANDARD) wsType = undefined
     type = ssType || wsType
@@ -76,7 +76,7 @@ function expandInput (scriptSig, witnessStack, type, scriptPubKey) {
       witness: witnessStack
     })
 
-    const outputType = btemplates.classifyOutput(redeem.output)
+    const outputType = classify.output(redeem.output)
     const expanded = expandInput(redeem.input, redeem.witness, outputType, redeem.output)
     if (!expanded.prevOutType) return {}
 
@@ -98,7 +98,7 @@ function expandInput (scriptSig, witnessStack, type, scriptPubKey) {
       input: scriptSig,
       witness: witnessStack
     })
-    const outputType = btemplates.classifyOutput(redeem.output)
+    const outputType = classify.output(redeem.output)
     let expanded
     if (outputType === SCRIPT_TYPES.P2WPKH) {
       expanded = expandInput(redeem.input, redeem.witness, outputType)
@@ -160,7 +160,7 @@ function fixMultisigOrder (input, transaction, vin) {
 
 function expandOutput (script, ourPubKey) {
   typeforce(types.Buffer, script)
-  const type = btemplates.classifyOutput(script)
+  const type = classify.output(script)
 
   switch (type) {
     case SCRIPT_TYPES.P2PKH: {
@@ -233,10 +233,10 @@ function prepareInput (input, ourPubKey, redeemScript, witnessValue, witnessScri
     }
 
     return {
-      redeemScript: redeemScript,
+      redeemScript,
       redeemScriptType: SCRIPT_TYPES.P2WSH,
 
-      witnessScript: witnessScript,
+      witnessScript,
       witnessScriptType: expanded.type,
 
       prevOutType: SCRIPT_TYPES.P2SH,
@@ -274,14 +274,14 @@ function prepareInput (input, ourPubKey, redeemScript, witnessValue, witnessScri
     }
 
     return {
-      redeemScript: redeemScript,
+      redeemScript,
       redeemScriptType: expanded.type,
 
       prevOutType: SCRIPT_TYPES.P2SH,
       prevOutScript: p2sh.output,
 
       hasWitness: expanded.type === SCRIPT_TYPES.P2WPKH,
-      signScript: signScript,
+      signScript,
       signType: expanded.type,
 
       pubkeys: expanded.pubkeys,
@@ -304,7 +304,7 @@ function prepareInput (input, ourPubKey, redeemScript, witnessValue, witnessScri
     }
 
     return {
-      witnessScript: witnessScript,
+      witnessScript,
       witnessScriptType: expanded.type,
 
       prevOutType: SCRIPT_TYPES.P2WSH,
@@ -331,12 +331,17 @@ function prepareInput (input, ourPubKey, redeemScript, witnessValue, witnessScri
       expanded.signatures = input.signatures
     }
 
+    let signScript = input.prevOutScript
+    if (expanded.type === SCRIPT_TYPES.P2WPKH) {
+      signScript = payments.p2pkh({ pubkey: expanded.pubkeys[0] }).output
+    }
+
     return {
       prevOutType: expanded.type,
       prevOutScript: input.prevOutScript,
 
       hasWitness: expanded.type === SCRIPT_TYPES.P2WPKH,
-      signScript: input.prevOutScript,
+      signScript,
       signType: expanded.type,
 
       pubkeys: expanded.pubkeys,
@@ -543,7 +548,7 @@ TransactionBuilder.prototype.__addInputUnsafe = function (txHash, vout, options)
     }
 
     input.prevOutScript = options.prevOutScript
-    input.prevOutType = prevOutType || btemplates.classifyOutput(options.prevOutScript)
+    input.prevOutType = prevOutType || classify.output(options.prevOutScript)
   }
 
   const vin = this.__tx.addInput(txHash, vout, options.sequence, options.scriptSig)

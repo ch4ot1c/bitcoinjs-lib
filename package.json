@@ -1,10 +1,10 @@
 {
   "name": "bitcoinjs-lib-z",
-  "version": "3.3.2-z",
+  "version": "4.0.0-z",
   "description": "Client-side Bitcoin JavaScript library with support for Z-coins",
   "main": "./src/index.js",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=8.0.0"
   },
   "keywords": [
     "bitcoinjs",

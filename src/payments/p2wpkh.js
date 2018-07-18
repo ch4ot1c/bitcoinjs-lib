@@ -1,14 +1,14 @@
-let lazy = require('./lazy')
-let typef = require('typeforce')
-let OPS = require('bitcoin-ops')
-let ecc = require('tiny-secp256k1')
+const lazy = require('./lazy')
+const typef = require('typeforce')
+const OPS = require('bitcoin-ops')
+const ecc = require('tiny-secp256k1')
 
-let baddress = require('../address')
-let bcrypto = require('../crypto')
-let bscript = require('../script')
-let BITCOIN_NETWORK = require('../networks').bitcoin
+const bcrypto = require('../crypto')
+const bech32 = require('bech32')
+const bscript = require('../script')
+const BITCOIN_NETWORK = require('../networks').bitcoin
 
-let EMPTY_BUFFER = Buffer.alloc(0)
+const EMPTY_BUFFER = Buffer.alloc(0)
 
 // witness: {signature} {pubKey}
 // input: <>
@@ -34,14 +34,26 @@ function p2wpkh (a, opts) {
     witness: typef.maybe(typef.arrayOf(typef.Buffer))
   }, a)
 
-  let _address = lazy.value(function () { return baddress.fromBech32(a.address) })
+  const _address = lazy.value(function () {
+    const result = bech32.decode(a.address)
+    const version = result.words.shift()
+    const data = bech32.fromWords(result.words)
+    return {
+      version,
+      prefix: result.prefix,
+      data: Buffer.from(data)
+    }
+  })
 
-  let network = a.network || BITCOIN_NETWORK
-  let o = { network }
+  const network = a.network || BITCOIN_NETWORK
+  const o = { network }
 
   lazy.prop(o, 'address', function () {
     if (!o.hash) return
-    return baddress.toBech32(o.hash, 0x00, network.bech32)
+
+    const words = bech32.toWords(o.hash)
+    words.unshift(0x00)
+    return bech32.encode(network.bech32, words)
   })
   lazy.prop(o, 'hash', function () {
     if (a.output) return a.output.slice(2, 22)
@@ -78,17 +90,11 @@ function p2wpkh (a, opts) {
   if (opts.validate) {
     let hash
     if (a.address) {
-      if (network && network.bech32 !== _address().prefix) throw new TypeError('Network mismatch')
-      if (_address().version !== 0x00) throw new TypeError('Invalid version')
-      if (_address().data.length !== 20) throw new TypeError('Invalid data')
-      if (hash && !hash.equals(_address().data)) throw new TypeError('Hash mismatch')
-      else hash = _address().data
-    }
-
-    if (a.pubkey) {
-      let pkh = bcrypto.hash160(a.pubkey)
-      if (hash && !hash.equals(pkh)) throw new TypeError('Hash mismatch')
-      else hash = pkh
+      if (network && network.bech32 !== _address().prefix) throw new TypeError('Invalid prefix or Network mismatch')
+      if (_address().version !== 0x00) throw new TypeError('Invalid address version')
+      if (_address().data.length !== 20) throw new TypeError('Invalid address data')
+      // if (hash && !hash.equals(_address().data)) throw new TypeError('Hash mismatch')
+      hash = _address().data
     }
 
     if (a.hash) {
@@ -105,15 +111,21 @@ function p2wpkh (a, opts) {
       else hash = a.output.slice(2)
     }
 
+    if (a.pubkey) {
+      const pkh = bcrypto.hash160(a.pubkey)
+      if (hash && !hash.equals(pkh)) throw new TypeError('Hash mismatch')
+      else hash = pkh
+    }
+
     if (a.witness) {
-      if (a.witness.length !== 2) throw new TypeError('Input is invalid')
-      if (!bscript.isCanonicalScriptSignature(a.witness[0])) throw new TypeError('Input has invalid signature')
-      if (!ecc.isPoint(a.witness[1])) throw new TypeError('Input has invalid pubkey')
+      if (a.witness.length !== 2) throw new TypeError('Witness is invalid')
+      if (!bscript.isCanonicalScriptSignature(a.witness[0])) throw new TypeError('Witness has invalid signature')
+      if (!ecc.isPoint(a.witness[1])) throw new TypeError('Witness has invalid pubkey')
 
       if (a.signature && !a.signature.equals(a.witness[0])) throw new TypeError('Signature mismatch')
       if (a.pubkey && !a.pubkey.equals(a.witness[1])) throw new TypeError('Pubkey mismatch')
 
-      let pkh = bcrypto.hash160(a.witness[1])
+      const pkh = bcrypto.hash160(a.witness[1])
       if (hash && !hash.equals(pkh)) throw new TypeError('Hash mismatch')
     }
   }
