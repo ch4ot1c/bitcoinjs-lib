@@ -25,6 +25,22 @@ describe('bitcoinjs-lib (transactions)', function () {
     assert.strictEqual(txb.build().toHex(), '01000000019d344070eac3fe6e394a16d06d7704a7d5c0a10eb2a2c16bc98842b7cc20d561000000006b48304502210088828c0bdfcdca68d8ae0caeb6ec62cd3fd5f9b2191848edae33feb533df35d302202e0beadd35e17e7f83a733f5277028a9b453d525553e3f5d2d7a7aa8010a81d60121029f50f51d63b345039a290c94bffd3180c99ed659ff6ea6b1242bca47eb93b59fffffffff01e02e0000000000001976a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac00000000')
   })
 
+  it('can create a 1-to-1 ZCL Transaction', function () {
+    const alice = bitcoin.ECPair.fromWIF('L5jnN4bb2fv5z3yuuM8RtLFDgWHR6FVWM6NPk47KAvtjqXkzveyt')
+    const txb = new bitcoin.TransactionBuilder()
+
+    txb.setVersion(1)
+    txb.addInput('fe49c15f26da326a922c01809feb826000d075a7fc830075f95c57c636a62f91', 1) // Alice's previous transaction output, has 187758 satoshis
+    txb.addOutput('t1Sz7jxJ81mqZdjdbY7xDQP5WppRoMAU539', 18000)
+    // (in)187758 - (out)18000 = (fee)169958, this is the miner fee
+
+    txb.sign(0, alice)
+
+    // prepare for broadcast to the Zclassic network, see "can broadcast a Transaction" below
+    assert.strictEqual(txb.build().toHex(), '0100000001912fa636c6575cf9750083fca775d0006082eb9f80012c926a32da265fc149fe010000006b483045022100b9dd667fa80dddc47c91103fe797467ccadab690a82119b3dae990a6e4a25e050220316dc8c3b46fe25d58e19d51fc58621f048c38810bbb08ffe6392ee95a959b660121030095fe6fc4dbe0c65916722ae5a71e41efc8da92e74336810adcd875822db629ffffffff0150460000000000001976a91463f472fe0812fb06ac4d7f8d06c7b1d48d3ecffa88ac00000000')
+    // txid: ac1caa4c8bb8fe9787709bc72d7ef08103ec0d59d4033902c28fabc5d7623a38
+  })
+
   it('can create a 2-to-2 Transaction', function () {
     const alice = bitcoin.ECPair.fromWIF('L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
     const bob = bitcoin.ECPair.fromWIF('KwcN2pT3wnRAurhy7qMczzbkpY5nXMW2ubh696UBc1bcwctTx26z')
