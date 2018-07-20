@@ -179,8 +179,9 @@ function isCanonicalPubKey (buffer) {
 function isDefinedHashType (hashType) {
   const hashTypeMod = hashType & ~(BTCP ? 0xc0 : 0x80)
 
-  // return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
-  return hashTypeMod > 0x00 && hashTypeMod < 0x04
+  //return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
+  return true
+  //hashTypeMod > 0x00 && hashTypeMod < 0x04
 }
 
 function isCanonicalScriptSignature (buffer) {

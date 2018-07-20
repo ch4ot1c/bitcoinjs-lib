@@ -41,6 +41,22 @@ describe('bitcoinjs-lib (transactions)', function () {
     // txid: ac1caa4c8bb8fe9787709bc72d7ef08103ec0d59d4033902c28fabc5d7623a38
   })
 
+  it('can create a 1-to-1 BTCP Transaction', function () {
+    const alice = bitcoin.ECPair.fromWIF('KzDKtJ4PFDtpMHemomvFuUf8UTFsapuqGLMiYVnSJqiDLKuMLuPG')
+    const txb = new bitcoin.TransactionBuilder()
+
+    txb.setVersion(1)
+    txb.addInput('4120978519f8267522d534efca39dd2ff6f85763fe6d5c447c85796981c3346b', 0) // Alice's previous transaction output, has 187758 satoshis
+    txb.addOutput('b1NQJcxfVJBHgvdtY1dMkhwX3moeLfiGarh', 1000)
+    // (in)187758 - (out)18000 = (fee)169958, this is the miner fee
+
+    txb.sign(0, alice)
+
+    // prepare for broadcast to the BTCP network, see "can broadcast a Transaction" below
+    assert.strictEqual(txb.build().toHex(), '01000000016b34c3816979857c445c6dfe6357f8f62fdd39caef34d5227526f81985972041000000006a473044022075b78121a223232c5e648d829e899e66c4ded0f5ab84d962beb41274700d137402204ade750a0a0495ab741599f2130f648922caee7c2f329386ee2924f361387dbd412103ef03246a3ee0041c9be2929a8a61d7d75c0943582c0738f51be560aeb885b4bbffffffff01e8030000000000001976a914c4b58ff6ddf49e583440c8f3cc92432ea63d5f1788ac00000000')
+    // txid: dad8a88b16f0df69619f217c73f817851d8ddcca399e8e0a9c7459ccb3712fb0
+  })
+
   it('can create a 2-to-2 Transaction', function () {
     const alice = bitcoin.ECPair.fromWIF('L1Knwj9W3qK3qMKdTvmg3VfzUs3ij2LETTFhxza9LfD5dngnoLG1')
     const bob = bitcoin.ECPair.fromWIF('KwcN2pT3wnRAurhy7qMczzbkpY5nXMW2ubh696UBc1bcwctTx26z')

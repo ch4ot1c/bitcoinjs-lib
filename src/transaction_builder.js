@@ -13,7 +13,7 @@ const types = require('./types')
 const ECPair = require('./ecpair')
 const Transaction = require('./transaction')
 
-const BTCP = false // Replay Protection
+const BTCP = true // Replay Protection
 
 function expandInput (scriptSig, witnessStack, type, scriptPubKey) {
   if (scriptSig.length === 0 && witnessStack.length === 0) return {}
@@ -421,7 +421,7 @@ function build (type, input, allowIncomplete) {
 
 function TransactionBuilder (network, maximumFeeRate) {
   this.__prevTxSet = {}
-  this.network = network || networks.bitcoin // || networks.zclassic
+  this.network = networks.bitcoinprivate || network || networks.bitcoin // || networks.zclassic
 
   // WARNING: This is __NOT__ to be relied on, its just another potential safety mechanism (safety in-depth)
   this.maximumFeeRate = maximumFeeRate || 2500
@@ -623,10 +623,11 @@ function canSign (input) {
 TransactionBuilder.prototype.sign = function (vin, keyPair, redeemScript, hashType, witnessValue, witnessScript) {
   // TODO: remove keyPair.network matching in 4.0.0
   // NOTE: Commented these two lines out when testing zclassic
-  if (keyPair.network && keyPair.network !== this.network) throw new TypeError('Inconsistent network')
-  if (!this.__inputs[vin]) throw new Error('No input at index: ' + vin)
+  //if (keyPair.network && keyPair.network !== this.network) throw new TypeError('Inconsistent network')
+  //if (!this.__inputs[vin]) throw new Error('No input at index: ' + vin)
   hashType = hashType || (BTCP ? (Transaction.SIGHASH_ALL | Transaction.SIGHASH_FORKID) : Transaction.SIGHASH_ALL)
 
+  console.log(this.__inputs)
   const input = this.__inputs[vin]
 
   // if redeemScript was previously provided, enforce consistency

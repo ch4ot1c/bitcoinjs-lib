@@ -21,8 +21,8 @@ function vectorSize (someVector) {
   }, 0)
 }
 
-const Z = false // Enable Z-coin related code (Bitcoin Private; Equihash 200,9)
-const BTCP = false // Replay Protection
+const Z = true // Enable Z-coin related code (Bitcoin Private; Equihash 200,9)
+const BTCP = true // Replay Protection
 function Transaction () {
   this.version = 1
   this.locktime = 0
@@ -384,6 +384,7 @@ Transaction.prototype.clone = function () {
  */
 Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashType) {
   typeforce(types.tuple(types.UInt32, types.Buffer, /* types.UInt8 */ types.Number), arguments)
+  console.log(hashType)
 
   // https://github.com/bitcoin/bitcoin/blob/master/src/test/sighash_tests.cpp#L29
   if (inIndex >= this.ins.length) return ONE

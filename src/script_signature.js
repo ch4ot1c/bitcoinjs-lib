@@ -46,7 +46,7 @@ function encode (signature, hashType) {
   }, { signature, hashType })
 
   const hashTypeMod = hashType & ~(BTCP ? 0xc0 : 0x80)
-  if (hashTypeMod <= 0 || hashTypeMod >= 4) throw new Error('Invalid hashType ' + hashType)
+  //if (hashTypeMod <= 0 || hashTypeMod >= 4) throw new Error('Invalid hashType ' + hashType)
 
   const hashTypeBuffer = Buffer.allocUnsafe(1)
   hashTypeBuffer.writeUInt8(hashType, 0)
